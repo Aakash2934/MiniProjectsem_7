@@ -1,3 +1,9 @@
 ipykernel
 datasets
 tqdm
+pandas
+numpy
+matplotlib
+seaborn
+spacy
+swifter
