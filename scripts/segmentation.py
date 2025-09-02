@@ -21,11 +21,12 @@ def segment_criteria(texts: list[str]) -> list[list[str]]:
     return results
 
 
-def clean_eligibility_criteria(df):
+def segmentation(df):
     df["eligibility_criteria_clean"] = (
         df["eligibility_criteria"]
         .fillna("")
         .str.replace("•", "\n-")
         .str.replace("*", "\n-")
     )
+    df["segmented_criteria"] = segment_criteria(df["eligibility_criteria_clean"].tolist())
     return df
