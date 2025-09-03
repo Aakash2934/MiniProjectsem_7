@@ -1,32 +1,32 @@
-import pandas as pd
-import spacy
+import re
+from typing import List
 
+def segment_text_batch(texts: List[str], nlp_model) -> List[List[str]]:
+    cleaned_texts = []
 
-def segment_criteria(texts: list[str]) -> list[list[str]]:
-    results = []
-    try:
-        nlp = spacy.load("en_core_sci_sm")
-    except OSError:
-        print("Error")
-        return results
+    for text in texts:
+        if not isinstance(text, str) or not text.strip():
+            cleaned_texts.append("")
+            continue
 
-    for doc in nlp.pipe(texts, batch_size=100, n_process=4):
-        segmented_criteria = []
-        for sent in doc.sents:
-            cleaned_sent = sent.text.strip()
-            if len(cleaned_sent) > 10:
-                segmented_criteria.append(cleaned_sent)
-        results.append(segmented_criteria)
+        text = text.replace('•', '\n-').replace('*', '\n-')
+        lines = text.split('\n')
+        cleaned_lines = []
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
 
-    return results
+            cleaned_line = re.sub(r'^\s*-\s*|\d+\.\s*', '', line).strip()
+            cleaned_lines.append(cleaned_line)
+        cleaned_texts.append("\n".join(cleaned_lines))
+    final_results = []
+    for doc in nlp_model.pipe(cleaned_texts, batch_size=100, n_process=-1):
+        sentences = [
+            sent.text.strip() for sent in doc.sents 
+            if len(sent.text.strip()) > 10
+        ]
+        final_results.append(sentences)
+        
+    return final_results
 
-
-def segmentation(df):
-    df["eligibility_criteria_clean"] = (
-        df["eligibility_criteria"]
-        .fillna("")
-        .str.replace("•", "\n-")
-        .str.replace("*", "\n-")
-    )
-    df["segmented_criteria"] = segment_criteria(df["eligibility_criteria_clean"].tolist())
-    return df
