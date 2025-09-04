@@ -1,5 +1,6 @@
 from ingest_data import fetch_data
 from segmentation import segment_text_batch
+from sample import create_sample_for_annotation
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -69,6 +70,7 @@ def main():
         output_path = os.path.join(PROCESSED_DATA_FOLDER, f"{split_name}.csv")
         df_final.to_csv(output_path, index=False, quoting=csv.QUOTE_ALL)
         print(f"   - {split} saved to'{output_path}'.")
+    create_sample_for_annotation()
 
 
 if __name__ == "__main__":
