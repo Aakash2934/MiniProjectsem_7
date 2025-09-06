@@ -1,5 +1,4 @@
 /data
-/extra
 /models/clinical-ner-model
 # Byte-compiled / optimized / DLL files
 __pycache__/
