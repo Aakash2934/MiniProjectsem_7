@@ -240,8 +240,6 @@ def main():
             result = annotate_text_with_hf_model(model, tokenizer, text, prompt_base)
             if result and "text" in result and "label" in result:
                 f.write(json.dumps(result) + '\n')
-
-    print(f"\n✅ Automated annotation complete!")
     print(f"   Output file saved to '{OUTPUT_JSONL_FILE}'.")
 
 if __name__ == "__main__":
