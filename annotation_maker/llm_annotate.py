@@ -2,7 +2,7 @@ import os
 import json
 import torch
 from tqdm import tqdm
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
 PROCESSED_DATA_FOLDER = os.path.join("../data", "processed")
 ANNOTATION_SAMPLE_FILE = os.path.join(PROCESSED_DATA_FOLDER, "sample.txt")
@@ -164,24 +164,24 @@ FEW_SHOT_EXAMPLES = [
     {"text": "History of psychiatric hospitalization is an exclusion.", "label": [[11, 40, "CONDITION"]]},
     {"text": "Patient agrees to not donate blood during the study.", "label": [[20, 32, "PROCEDURE"]]}
 ]
+
 SYSTEM_PROMPT = """
 You are an expert AI assistant specializing in clinical trial eligibility criteria. Your task is to perform Named Entity Recognition (NER) on a given criterion text.
 
 You must identify and label entities using ONLY the following 7 labels:
-- CONDITION: Any disease, disorder, diagnosis, symptom, or clinical state.
-- DRUG: Any medication or class of drugs.
-- LAB_TEST: The name of a laboratory measurement or test.
-- VALUE: The specific numerical value or quantifier for a rule.
-- OPERATOR: Words or symbols defining a relationship (e.g., '>', 'of', 'No').
-- PROCEDURE: A medical action, treatment, or surgery.
-- DEMOGRAPHIC: Patient attributes like age or gender.
+- CONDITION
+- DRUG
+- LAB_TEST
+- VALUE
+- OPERATOR
+- PROCEDURE
+- DEMOGRAPHIC
 
-For each "INPUT" text, you must return ONLY a single, valid JSON object as the "OUTPUT". The JSON object must have two keys: "text" (the original input text) and "label" (a list of annotations, where each annotation is a list of [start_index, end_index, "LABEL_NAME"]).
+For each "INPUT" text, you must return ONLY a single, valid JSON object as the "OUTPUT". The JSON object must have two keys: "text" (the original input text) and "label" (a list of annotations, where each annotation is a list of [start_index, end_index, "LABEL_NAME"]). Do not add any explanations or markdown.
 """
 
-
 def format_few_shot_examples(examples: list) -> str:
-    """Formats the few-shot examples into a string for the prompt."""
+    """Formats the examples into a string for the prompt."""
     formatted_examples = []
     for ex in examples:
         output_str = json.dumps({"text": ex["text"], "label": ex["label"]})
@@ -189,20 +189,25 @@ def format_few_shot_examples(examples: list) -> str:
     return "\n---\n".join(formatted_examples)
 
 def load_model_and_tokenizer():
-    print(f"Loading model: {MODEL_ID}.")
+    """Loads the Hugging Face model and tokenizer in a memory-efficient way."""
+    print(f"-> Loading model: {MODEL_ID}. This will download ~14 GB and may take a while...")
+    
+    # Configure quantization to load the model in 4-bit, saving memory.
+    quantization_config = BitsAndBytesConfig(load_in_4bit=True)
     
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_ID,
-        load_in_4bit=True,
+        quantization_config=quantization_config,
         torch_dtype=torch.bfloat16,
-        device_map="auto"
+        device_map="auto" # Automatically use GPU if available
     )
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
     
-    print("Model and tokenizer loaded successfully.")
+    print("✅ Model and tokenizer loaded successfully.")
     return model, tokenizer
 
 def annotate_text_with_hf_model(model, tokenizer, text_to_annotate: str, prompt_base: str):
+    """Generates an annotation for a single text using the local Hugging Face model."""
     full_prompt = prompt_base + text_to_annotate + "\nOUTPUT:"
     
     messages = [{"role": "user", "content": full_prompt}]
@@ -210,37 +215,49 @@ def annotate_text_with_hf_model(model, tokenizer, text_to_annotate: str, prompt_
     inputs = tokenized_chat.to(model.device)
 
     try:
-        outputs = model.generate(inputs, max_new_tokens=256, do_sample=False)
+        outputs = model.generate(inputs, max_new_tokens=256, do_sample=False, pad_token_id=tokenizer.eos_token_id)
         decoded_output = tokenizer.decode(outputs[0][inputs.shape[-1]:], skip_special_tokens=True)
-        json_text = decoded_output.strip().replace("```json", "").replace("```", "").strip()
-        return json.loads(json_text)
-    except json.JSONDecodeError:
-        print(f"   - Warning: Failed to decode JSON for text: '{text_to_annotate[:50]}...'")
-        return {"text": text_to_annotate, "label": []}
+        
+        # Clean the output to find the first valid JSON object
+        json_match = re.search(r'\{.*\}', decoded_output)
+        if json_match:
+            json_text = json_match.group(0)
+            return json.loads(json_text)
+        else:
+            print(f"   - Warning: No valid JSON found in model output for: '{text_to_annotate[:50]}...'")
+            return {"text": text_to_annotate, "label": []}
+            
     except Exception as e:
-        print(f"   - Warning: An model generation error occurred: {e}")
+        print(f"   - Warning: Model generation error occurred: {e}")
         return {"text": text_to_annotate, "label": []}
 
 def main():
+    """Main function to run the automated annotation with a local HF model."""
     print("--- Starting Automated Annotation using Hugging Face Model ---")
+
     model, tokenizer = load_model_and_tokenizer()
+
     few_shot_prompt_part = format_few_shot_examples(FEW_SHOT_EXAMPLES)
-    prompt_base = f"{SYSTEM_PROMPT}\n\nHere are the examples of how to perform the task:\n{few_shot_prompt_part}\n\n---\nNow, perform the task on the following new input.\nINPUT: "
+    prompt_base = f"{SYSTEM_PROMPT}\n\nHere are the examples:\n{few_shot_prompt_part}\n\n---\nNow, perform the task on this new input.\nINPUT: "
+
     if not os.path.exists(ANNOTATION_SAMPLE_FILE):
-        print(f"Error: Annotation sample file not found at '{ANNOTATION_SAMPLE_FILE}'.")
+        print(f"❌ Error: Annotation sample file not found at '{ANNOTATION_SAMPLE_FILE}'.")
         return
 
     with open(ANNOTATION_SAMPLE_FILE, 'r', encoding='utf-8') as f:
         texts_to_process = [line.strip() for line in f if line.strip()]
     
     print(f"Found {len(texts_to_process)} criteria to annotate.")
-    annotated_results = []
+
     with open(OUTPUT_JSONL_FILE, 'w', encoding='utf-8') as f:
-        for text in tqdm(texts_to_process, desc="Annotating criteria via HF Model"):
+        for text in tqdm(texts_to_process, desc="Annotating criteria via local model"):
             result = annotate_text_with_hf_model(model, tokenizer, text, prompt_base)
             if result and "text" in result and "label" in result:
                 f.write(json.dumps(result) + '\n')
+
+    print(f"\n✅ Automated annotation complete!")
     print(f"   Output file saved to '{OUTPUT_JSONL_FILE}'.")
+    print("\n   You can now proceed to the next step: '03_prepare_ner_data.py'.")
 
 if __name__ == "__main__":
     main()

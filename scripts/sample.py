@@ -7,9 +7,10 @@ ANNOTATION_SAMPLE_FILE = os.path.join(PROCESSED_DATA_FOLDER, "sample.txt")
 SAMPLE_SIZE = 1000
 
 def create_sample_for_annotation():
-    print("--- Creating Annotation Sample ---")
+    print("Creating Annotation Sample")
+    
     if not os.path.exists(PROCESSED_TRAIN_FILE):
-        print(f"Error: Processed training file not found at '{PROCESSED_TRAIN_FILE}'.")
+        print("File not found.")
         return
 
     df = pd.read_csv(PROCESSED_TRAIN_FILE)
@@ -19,8 +20,5 @@ def create_sample_for_annotation():
         for text in sample_criteria:
             f.write(f"{text.strip()}\n")
             
-    print(f"Sample file with {len(sample_criteria)} unique criteria created at '{ANNOTATION_SAMPLE_FILE}'.")
-
 if __name__ == "__main__":
     create_sample_for_annotation()
-

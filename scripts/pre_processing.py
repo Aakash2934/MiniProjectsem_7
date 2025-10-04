@@ -7,10 +7,11 @@ import csv
 from ingest_data import fetch_data
 from segmentation import segment_text_batch
 
-DATA_FOLDER = "data"
+DATA_FOLDER = "../data"
 PROCESSED_DATA_FOLDER = os.path.join(DATA_FOLDER, "processed")
 DATASET_NAME = "louisbrulenaudet/clinical-trials"
 EDA_PLOT_FILE = os.path.join(DATA_FOLDER, "criteria_length_distribution.png")
+
 COLUMNS_TO_KEEP = [
     'nct_id', 'eligibility_criteria', 'overall_status', 'phases', 'study_type',
     'minimum_age', 'maximum_age', 'sex', 'healthy_volunteers', 'conditions',
@@ -19,13 +20,13 @@ COLUMNS_TO_KEEP = [
 ]
 
 def main():
-    print("--- Starting Phase I: Data Preprocessing ---")
+    print("Data Preprocessing Started...")
 
     try:
         nlp = spacy.load("en_core_web_sm")
-        print("Standard spaCy model 'en_core_web_sm' loaded successfully.")
+        print("Downloaded")
     except OSError:
-        print("-> Model 'en_core_web_sm' not found. Downloading...")
+        print("Error")
         from spacy.cli import download
         download("en_core_web_sm")
         nlp = spacy.load("en_core_web_sm")
@@ -35,21 +36,19 @@ def main():
     os.makedirs(PROCESSED_DATA_FOLDER, exist_ok=True)
 
     for split_name in split.keys():
-        print(f"\n--- Processing '{split_name}' data ---")
+        print(f"\nProcessing:- {split_name} set.")
         df = split[split_name].to_pandas()
-        
         df = df[COLUMNS_TO_KEEP]
         df.dropna(subset=['eligibility_criteria'], inplace=True)
-        print(f"  - Started with {len(df)} trials after filtering.")
 
         if split_name == "train":
             df['criteria_length'] = df['eligibility_criteria'].str.len()
             plt.figure(figsize=(12, 6))
             sns.histplot(df['criteria_length'].dropna(), bins=50, kde=True)
-            plt.title('Distribution of Eligibility Criteria Text Length (Train Set)')
+            plt.title('Distribution of Criteria Text Length')
             plt.savefig(EDA_PLOT_FILE)
             plt.close()
-            print(f"  - EDA plot saved to '{EDA_PLOT_FILE}'.")
+            print(f"EDA plot saved to:- {EDA_PLOT_FILE}")
 
         criteria_list = df['eligibility_criteria'].tolist()
         segmented_results = segment_text_batch(criteria_list, nlp)
@@ -57,15 +56,13 @@ def main():
         
         df_exploded = df.explode('segmented_criteria').rename(columns={'segmented_criteria': 'criterion_text'})
         df_exploded.dropna(subset=['criterion_text'], inplace=True)
-        
         final_columns = [col for col in df.columns if col not in ['eligibility_criteria', 'criteria_length', 'segmented_criteria']]
         final_columns.insert(1, 'criterion_text')
         df_final = df_exploded[final_columns].copy()
-        
         output_path = os.path.join(PROCESSED_DATA_FOLDER, f"{split_name}.csv")
         df_final.to_csv(output_path, index=False, quoting=csv.QUOTE_ALL)
-        print(f"  - Final processed file with {len(df_final)} criteria saved to '{output_path}'.")
-        
+
+    print("\n Data preprocessing completed.")
+
 if __name__ == "__main__":
     main()
-
