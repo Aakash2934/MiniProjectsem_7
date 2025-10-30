@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-PROCESSED_DATA_FOLDER = os.path.join("../data", "processed")
+PROCESSED_DATA_FOLDER = os.path.join("./data", "processed")
 PROCESSED_TRAIN_FILE = os.path.join(PROCESSED_DATA_FOLDER, "train.csv")
 ANNOTATION_SAMPLE_FILE = os.path.join(PROCESSED_DATA_FOLDER, "sample.txt")
 SAMPLE_SIZE = 1000
