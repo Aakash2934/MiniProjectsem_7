@@ -15,3 +15,5 @@ seqeval
 accelerate
 bitsandbytes
 hf_xet
+chromadb
+sentence-transformers
