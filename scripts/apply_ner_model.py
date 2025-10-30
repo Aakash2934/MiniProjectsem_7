@@ -22,7 +22,6 @@ def apply_ner_model_robust():
     NUM_THREADS = 8
     torch.set_num_threads(NUM_THREADS)
     print(f"-> Set PyTorch to use {NUM_THREADS} CPU threads for processing.")
-    # --------------------------------
 
     if not os.path.exists(MODEL_PATH):
         print(f"Trained model not found at '{MODEL_PATH}'.")

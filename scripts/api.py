@@ -5,11 +5,10 @@ from sentence_transformers import SentenceTransformer
 from pydantic import BaseModel
 import uvicorn
 
-DB_PATH = "../vector_db"
+DB_PATH = "./vector_db"
 COLLECTION_NAME = "clinical_trials"
 VECTOR_MODEL = 'all-MiniLM-L6-v2'
 
-print("Loading all models for the API. This may take a moment...")
 
 try:
     client = chromadb.PersistentClient(path=DB_PATH)
@@ -35,7 +34,6 @@ class SearchQuery(BaseModel):
 
 @app.get("/")
 def read_root():
-    """A simple root endpoint to confirm the API is running."""
     return {"message": "Clinical Trial Semantic Search API is running."}
 
 @app.post("/search/")

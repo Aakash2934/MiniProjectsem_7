@@ -17,3 +17,6 @@ bitsandbytes
 hf_xet
 chromadb
 sentence-transformers
+fastapi 
+pydantic 
+uvicorn[standard]
