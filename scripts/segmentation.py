@@ -24,8 +24,9 @@ def segment_text_batch(texts: List[str], nlp_model) -> List[List[str]]:
         cleaned_texts_for_nlp.append(" ".join(cleaned_lines))
 
     final_results = []
+    print("Starting efficient NLP batch processing for sentence segmentation...")
     for doc in tqdm(nlp_model.pipe(cleaned_texts_for_nlp, batch_size=50), total=len(cleaned_texts_for_nlp), desc="Segmenting criteria"):
         sentences = [sent.text.strip() for sent in doc.sents if len(sent.text.strip()) > 10]
         final_results.append(sentences)
-
+        
     return final_results
