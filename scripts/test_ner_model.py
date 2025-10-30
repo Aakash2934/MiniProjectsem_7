@@ -1,16 +1,14 @@
 import os
 from transformers import pipeline, AutoTokenizer, AutoModelForTokenClassification
 
-
-MODEL_PATH = os.path.join("../models", "clinical-ner-model")
+MODEL_PATH = os.path.join("./models", "clinical-ner-model")
 
 def test_model():
-
     if not os.path.exists(MODEL_PATH):
-        print(f"Model not found.")
+        print(f"Trained model not found at '{MODEL_PATH}'.")
         return
 
-    print(f"oading your custom-trained model from '{MODEL_PATH}'...")
+    print(f"Loading your custom-trained model from '{MODEL_PATH}'...")
     try:
         tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
         model = AutoModelForTokenClassification.from_pretrained(MODEL_PATH)
@@ -19,9 +17,10 @@ def test_model():
             "token-classification", 
             model=model,
             tokenizer=tokenizer,
-            aggregation_strategy="simple"
+            aggregation_strategy="simple",
+            device=-1 
         )
-        print("\nModel Loaded Successfully.")
+        print("\n--- Model Loaded Successfully. Ready for Inference ---")
     except Exception as e:
         print(f"Error loading the model pipeline: {e}")
         return
