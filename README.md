@@ -221,6 +221,10 @@ clinical_trials_ner/
 │   │   └── train_structured_knowledge.jsonl
 │   └── ner_dataset/
 │
+├── plots/
+│   ├── training_loss_curve.png
+│   ├── final_evaluation_metrics.png
+│   └── entity_distribution.png
 │
 ├── scripts/
 │   ├── ingest_data.py
