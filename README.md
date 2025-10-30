@@ -1,159 +1,279 @@
-# 💊 Rx Intel – Intelligent Drug Report Generation using NLP  
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)  
-![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)  
-![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)  
-![Status](https://img.shields.io/badge/Status-Research%20Project-green)  
+# 🧬 Clinical Trial Semantic Search Engine
 
----
+## 📖 Overview
 
-## 📖 Overview  
-Clinical trial drug reports often suffer from **inconsistency, lack of structure, and low standardization**, which reduces their usability in healthcare and research.  
+Finding relevant clinical trials is a critical but incredibly difficult task. The eligibility criteria for trials are often written in dense, unstructured medical text, making it nearly impossible to search for them based on specific patient attributes or the semantic meaning of a query.
 
-**Rx Intel** is an **AI-driven system** that leverages **Natural Language Processing (NLP)** and **fine-tuned biomedical Large Language Models (LLMs)** to automatically generate **structured, standardized, and protocol-compliant drug reports**.  
+This project solves this problem by building a complete, end-to-end **Natural Language Processing (NLP)** pipeline.  
+The system ingests over **3.5 million unstructured clinical trial criteria**, uses a **custom-trained BioBERT model** to understand and extract key information, and deploys this knowledge into a **high-speed semantic search engine**.
 
-This project bridges the gap between **raw clinical trial data** and **readable, structured medical documents**, ultimately improving **efficiency, accuracy, and accessibility** for:  
-- 🩺 Medical professionals  
-- 🔬 Researchers  
-- 📊 Regulatory authorities  
+This engine allows researchers, doctors, and patients to find relevant clinical trials not by just matching keywords, but by understanding the **intent and meaning** of their search query.
+
+> This project bridges the gap between massive, unstructured text data and a queryable, structured knowledge base.
 
 ---
 
-## 🎯 Problem Statement  
-Traditional drug reports generated from clinical trials are:  
-- ❌ Unstructured and inconsistent  
-- ❌ Difficult to standardize across medical domains  
-- ❌ Hard to integrate into downstream systems like EMRs  
+## 🎯 Problem Statement
 
-This project provides a **solution** by:  
-✔️ Automatically generating structured reports compliant with standards like **ICH-M11** and **SPIRIT checklists**  
-✔️ Using **biomedical LLMs fine-tuned with LoRA adapters**  
-✔️ Performing **semantic mapping** of conditions, drugs, and outcomes for reliability  
+Clinical trial databases (like ClinicalTrials.gov) are vast, but their search functionality is often limited to keyword matching.
 
----
+### ❌ Challenges
+- **Unstructured Data:** Eligibility criteria are free-text blocks (e.g., "patient must be over 18 and have no history of NSCLC").
+- **Keyword Mismatch:** A search for "lung cancer" might miss "non-small cell lung cancer" or "NSCLC".
+- **Scalability:** Impossible for humans to manually read and categorize millions of criteria.
 
-## 🚀 Key Features  
-- 📑 **Automated Report Generation** – Converts raw trial data into structured protocol reports  
-- 🧠 **Biomedical LLMs** – Uses domain-specialized models (BioGPT, BioMedLM, LLaMA-2)  
-- ⚡ **Parameter-Efficient Fine-Tuning (PEFT)** – LoRA adapters for resource efficiency  
-- ✅ **Compliance-Ready Templates** – Aligns with ICH-M11 & SPIRIT clinical standards  
-- 🛡️ **Quality Assurance Controls** – Checks for dosage consistency, unit validation, hallucination detection  
-- 📊 **Evaluation Metrics** – ROUGE, BLEU, UniEval, and expert reviews  
-- 🌍 **Scalability** – Designed for large-scale processing of clinical trial repositories  
+### ✔️ Our Solution
+- Automatically structure **3.5M+ criteria** using a custom-trained **NER model**.
+- Extract **7 key entity types:**  
+  `CONDITION`, `DRUG`, `LAB_TEST`, `VALUE`, `OPERATOR`, `PROCEDURE`, and `DEMOGRAPHIC`.
+- Build a **semantic index** that allows users to search based on meaning and intent.
 
 ---
 
-## 🏗️ System Architecture  
+## 🚀 Key Features
 
-[1] Data Ingestion & Preprocessing
-↓
-[2] Ontology & Semantic Mapping (MeSH, DrugBank, RxNorm)
-↓
-[3] JSON Schema Generation (protocol template)
-↓
-[4] Prompt–Response Pair Creation
-↓
-[5] Transformer Model (Frozen) + LoRA Fine-Tuning
-↓
-[6] Validation & Metrics Evaluation
-↓
-[7] Post-Processing & Quality Assurance
-↓
-[8] Deployment via API
-↓
-[9] Monitoring, Logging & Compliance
+- **📑 Automated Data Pipeline (Phase I)**  
+  Ingests and caches the dataset using `spaCy` for efficient segmentation of 3.5M+ text blocks.
 
+- **🧠 Custom AI Model (Phase II)**  
+  Fine-tuned **BioBERT (dmis-lab/biobert-base-cased-v1.1)** for 7 medical entity types.
 
----
+- **⚡ Large-Scale Inference (Phase III)**  
+  Multiprocessing optimization reduces processing time from 270+ hours to a few hours.
 
-## 🛠️ Tech Stack  
+- **🔗 Rule-Based Structuring (Phase III)**  
+  Uses `spaCy` dependency parsing to connect entities (e.g., LAB_TEST → VALUE).
 
-**Languages & Frameworks**  
-- Python 3.10+  
-- PyTorch, Hugging Face Transformers  
-- FastAPI / Flask for deployment  
+- **🔍 Semantic Search (Phase IV)**  
+  Uses **all-MiniLM-L6-v2 Sentence Transformer** for 384-dimensional embeddings.
 
-**Libraries & Tools**  
-- PEFT (LoRA Adapters)  
-- spaCy, NLTK, Scikit-learn  
-- JSON Schema, Pandas, NumPy  
+- **🗄️ High-Speed Vector Database (Phase IV)**  
+  Employs **ChromaDB** for fast semantic similarity search.
 
-**Datasets**  
-- [ClinicalTrials.gov](https://clinicaltrials.gov/)  
-- [DrugBank](https://go.drugbank.com/)  
-- [RxNorm](https://www.nlm.nih.gov/research/umls/rxnorm/)  
+- **🖥️ Interactive API (Phase V)**  
+  A FastAPI-powered REST API exposes the `/search/` endpoint for querying trials.
 
 ---
 
-## 📊 Results & Impact  
-- ✅ Increased **report readability & usability**  
-- ✅ Ensured compliance with **ICH-M11 / SPIRIT standards**  
-- ✅ Enhanced **data reliability** for clinical applications  
-- ✅ Scalable framework for **large clinical datasets**  
-- ✅ Contributes to **faster drug research & approval cycles**  
+## 🏗️ System Architecture — The 5-Phase Pipeline
+
+### **Phase I: Data Ingestion & Preprocessing**
+- **Dataset:** `louisbrulenaudet/clinical-trials`
+- **Library:** `datasets`
+- **Process:** Clean, filter, and segment text using `spaCy`’s `nlp.pipe()`.
+- **Output:**  
+  - `train.csv`  
+  - `test.csv`  
+  (3.5M+ rows of segmented eligibility criteria)
 
 ---
 
-## 📥 Installation  
+### **Phase II: The Core Intelligence Engine (NER Model)**
+1. **Sampling:** Select 1,000 unique criteria for manual annotation.  
+2. **Annotation:** Create gold-standard `all.jsonl` file with labeled entities.  
+3. **Data Prep:** Convert to IOB2-tagged “flashcards” format.  
+4. **Training:** Fine-tune BioBERT using Cross-Entropy Loss.  
+
+#### 📘 Key Equations
+**Cross-Entropy Loss:**  
+\[
+Loss = -\sum_i y_i \log(\hat{y}_i)
+\]
+
+**F1-Score:**  
+\[
+F1 = 2 \times \frac{P \times R}{P + R}
+\]
+
+#### 📦 Output:
+Custom NER model → `models/clinical-ner-model/`
+
+---
+
+### **Phase III: Structuring & Normalization**
+- **Inference:** Process all 3.5M+ criteria using 12-core multiprocessing.
+- **Relation Extraction:** Connect entities via dependency parsing.
+- **Normalization:** Map entity text to **UMLS codes**.
+
+**Output:** `train_structured_knowledge.jsonl`
+
+---
+
+### **Phase IV: Vectorization & Indexing**
+- **Model:** `all-MiniLM-L6-v2`
+- **Process:** Convert each sentence into a 384-dimensional semantic vector.
+- **Similarity Metric:** **Cosine Similarity**
+  \[
+  Similarity = \frac{V_q \cdot V_d}{||V_q|| \times ||V_d||}
+  \]
+
+**Output:** `vector_db/` (ChromaDB persistent index)
+
+---
+
+### **Phase V: Deployment via API**
+- **Framework:** FastAPI + Uvicorn
+- **Endpoint:** `/search/`
+- **Functionality:**
+  1. Converts query into vector (`V_q`)
+  2. Computes cosine similarity with stored vectors
+  3. Returns top 5 relevant trials
+
+**Access:**  
+`http://127.0.0.1:8000/docs`
+
+---
+
+## 🛠️ Tech Stack
+
+| Category | Tools / Libraries |
+|-----------|-------------------|
+| **Language** | Python 3.11+ |
+| **DL Framework** | PyTorch |
+| **API Framework** | FastAPI + Uvicorn |
+| **NLP Libraries** | Hugging Face Transformers, Datasets, spaCy |
+| **Embeddings** | Sentence-Transformers (all-MiniLM-L6-v2) |
+| **Database** | ChromaDB |
+| **Utilities** | pandas, tqdm, seqeval |
+| **Visualization** | matplotlib, seaborn |
+
+---
+
+## 🧩 Key Models
+
+| Model Type | Name | Purpose |
+|-------------|------|----------|
+| **NER Model** | dmis-lab/biobert-base-cased-v1.1 | Extract 7 biomedical entities |
+| **Vector Model** | all-MiniLM-L6-v2 | Convert text into semantic embeddings |
+
+---
+
+## 📂 Repository Structure
+
+```
+
+clinical_trials_ner/
+│
+├── README.md
+├── requirements.txt
+│
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   │   ├── train.csv
+│   │   ├── test.csv
+│   │   ├── sample.txt
+│   │   ├── all.jsonl
+│   │   ├── train_with_entities.jsonl
+│   │   ├── test_with_entities.jsonl
+│   │   └── train_structured_knowledge.jsonl
+│   └── ner_dataset/
+│
+├── scripts/
+│   ├── ingest_data.py
+│   ├── segmentation.py
+│   ├── preprocess_data.py
+│   ├── create_annotation_sample.py
+│   ├── prepare_ner_data.py
+│   ├── train_ner_model.py
+│   ├── test_ner_model.py
+│   ├── apply_ner_model.py
+│   ├── structure_and_normalize.py
+│   ├── visualize_results.py
+│   ├── vectorize_and_index.py
+│   └── api.py
+│
+├── models/
+│   └── clinical-ner-model/
+│
+├── vector_db/
+│
+└── plots/
+├── 01_training_loss_curve.png
+├── 02_final_evaluation_metrics.png
+└── 03_entity_distribution.png
+
+````
+
+---
+
+## ▶️ Usage: Running the Full Pipeline
+
+### 🧰 Setup
 
 ```bash
 # Clone the repository
-git clone https://github.com/<your-username>/<your-repo>.git
-cd <your-repo>
+git clone https://github.com/<your-username>/clinical_trials_ner.git
+cd clinical_trials_ner
 
-# Create virtual environment
+# Create a virtual environment
 python -m venv venv
-source venv/bin/activate   # On Windows: venv\Scripts\activate
+.\venv\Scripts\activate  # On Windows
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Download spaCy model
+python -m spacy download en_core_web_sm
+````
+
+---
+
+### 🏁 Run the Pipeline
+
+#### **Phase I: Data Preprocessing**
+
+```bash
+python scripts/01_preprocess_data.py
 ```
-## ▶️ Usage
-1️⃣ Preprocess Clinical Trial Data
-``` python preprocess.py --input raw_data.json --output clean_data.json```
 
-2️⃣ Train with LoRA Fine-Tuning
-```python train.py --data clean_data.json --epochs 5```
+#### **Phase II: Model Training**
 
-3️⃣ Generate Drug Protocol Report
-```python generate_report.py --input trial.json --output report.json```
-
-
-Example Output:
+```bash
+python scripts/02_create_annotation_sample.py
+# (Annotate 'sample.txt' manually and save as 'all.jsonl')
+python scripts/03_prepare_ner_data.py
+python scripts/04_train_ner_model.py
+python scripts/05_test_ner_model.py
 ```
-{
-  "drug_name": "Atorvastatin",
-  "condition": "Hypercholesterolemia",
-  "dosage": "20mg/day",
-  "outcomes": "Reduced LDL cholesterol by 45%",
-  "phase": "Phase III",
-  "sponsor": "Pfizer"
-}
+
+#### **Phase III & IV: Processing and Indexing**
+
+```bash
+python scripts/06_apply_ner_model.py
+python scripts/07_structure_and_normalize.py
+python scripts/08_visualize_results.py
+python scripts/09_vectorize_and_index.py
 ```
-📂 Repository Structure
-├── data/                 # Sample clinical trial datasets  
-├── models/               # Fine-tuned model checkpoints  
-├── scripts/              # Training & preprocessing scripts  
-├── outputs/              # Generated reports  
-├── preprocess.py         # Data cleaning & normalization  
-├── train.py              # Fine-tuning script with LoRA  
-├── generate_report.py    # Report generation tool  
-├── requirements.txt      # Python dependencies  
-└── README.md             # Documentation  
 
-## ✅ Future Enhancements  
+#### **Phase V: API Deployment**
 
-🌍 Multi-lingual clinical report generation  
-📊 Interactive dashboard for visualization  
-🔍 Explainable AI for better interpretability  
-🏥 Direct integration with Electronic Medical Records (EMR) systems  
+```bash
+python scripts/10_api.py
+```
 
+Visit [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) and test queries like:
 
-## 👨‍💻 Contributors  
+* “patients with non-small cell lung cancer”
+* “adults over 50 with diabetes”
 
-Sankalp Sathe 
-Satish Singh 
-Aakash Shedge 
-Pranavi Shukla   
+---
 
-**Mentor:** Dr. Ekta Sarda  
+## ✅ Future Enhancements
+
+* 🌍 **Multi-lingual Support** for global trial databases.
+* 📊 **Interactive Dashboard** (Streamlit/React UI).
+* 🏥 **EMR Integration** for automatic patient-trial matching.
+* 🧩 **Relation Extraction Model** (beyond rule-based parsing).
+
+---
+
+## 👨‍💻 Contributors
+
+* **Sankalp Sathe**
+* **Satish Singh**
+* **Aakash Shedge**
+* **Pranavi Shukla**
+
+**Mentor:** *Dr. Ekta Sarda*
