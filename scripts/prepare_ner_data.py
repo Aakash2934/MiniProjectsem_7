@@ -3,15 +3,16 @@ from datasets import Dataset, Features, Value, Sequence
 import os
 from transformers import AutoTokenizer
 
-PROCESSED_DATA_FOLDER = os.path.join("../data", "processed")
+
+PROCESSED_DATA_FOLDER = os.path.join("./data", "processed")
 ANNOTATION_FILE = os.path.join(PROCESSED_DATA_FOLDER, "all.jsonl") 
-OUTPUT_DATASET_FOLDER = os.path.join("../data", "ner_dataset")
+OUTPUT_DATASET_FOLDER = os.path.join("./data", "ner_dataset")
 MODEL_CHECKPOINT = "dmis-lab/biobert-base-cased-v1.1"
 LABELS = ["CONDITION", "DRUG", "LAB_TEST", "VALUE", "OPERATOR", "PROCEDURE", "DEMOGRAPHIC"]
 
 def prepare_data():
     if not os.path.exists(ANNOTATION_FILE):
-        print(f"File not found: {ANNOTATION_FILE}")
+        print(f"❌ Error: Annotation file not found at '{ANNOTATION_FILE}'.")
         return
 
     print(f"-> Loading annotation file from '{ANNOTATION_FILE}'...")
@@ -33,6 +34,7 @@ def prepare_data():
         {'text': texts, 'ner_tags_spans': spans},
         features=feature_schema
     )
+    print(f"Successfully loaded {len(dataset)} annotated examples.")
 
     tag_names = ['O'] + [f'{prefix}-{tag}' for tag in LABELS for prefix in ['B', 'I']]
     tag2id = {tag: i for i, tag in enumerate(tag_names)}
@@ -72,8 +74,7 @@ def prepare_data():
     print(final_dataset)
     
     final_dataset.save_to_disk(OUTPUT_DATASET_FOLDER)
-    print(f"\nNER dataset is Prepared and saved to '{OUTPUT_DATASET_FOLDER}'.")
+    print(f"\nProcessed dataset saved to '{OUTPUT_DATASET_FOLDER}'. You are now ready to train the model.")
 
 if __name__ == "__main__":
     prepare_data()
-
